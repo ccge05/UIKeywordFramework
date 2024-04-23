@@ -13,12 +13,12 @@ def get_test_data(excel_file_path, sheet_name):
         excel = Excel(excel_file_path)
     # 校验sheet名
     if not excel.get_sheet(sheet_name):
-        error("sheet【】不存在，停止执行！" % sheet_name)
+        error("sheet【%s】不存在，停止执行！" % sheet_name)
         return
     result_list = []
     all_row_data = excel.get_all_row_data()
     if len(all_row_data) <= 1:
-        error("sheet【】数据不大于1行，停止执行！" % sheet_name)
+        error("sheet【%s】数据不大于1行，停止执行！" % sheet_name)
         return
     # 将参数化的测试数据存入全局字典
     head_line_data = all_row_data[0]

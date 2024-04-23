@@ -19,6 +19,10 @@ class Excel:
         self.data_file_path = file_path
         # 初始化颜色字典，供设置样式用
         self.color_dict = {"red": "FFFF3030", "green": "FF008B00"}
+    
+    def create_new_sheet(self, sheet_name):
+        self.wb.create_sheet(title=sheet_name)
+        # print("建立新表成功")
 
     def get_all_sheet(self):
         return self.wb.get_sheet_names()
@@ -63,11 +67,8 @@ class Excel:
         # 索引从0开始
         return [cell.value for cell in tuple(self.ws.columns)[col_num]]
 
-    # 追加行数据且可以设置样式
-    def write_row_data(self, data, font_color=None, border=True, fill_color=None):
-        if not isinstance(data, (list, tuple)):
-            print("写入数据失败：数据不为列表或元组类型！【%s】" % data)
-        self.ws.append(data)
+    # 设置样式
+    def apply_style(self, data, font_color=None, border=True, fill_color=None):
         # 设置字体颜色
         if font_color:
             if font_color.lower() in self.color_dict.keys():
@@ -100,12 +101,20 @@ class Excel:
                 cell.fill = PatternFill(fill_type="solid", fgColor=fill_color)
             count += 1
 
+    # 追加行数据且可以设置样式
+    def write_row_data(self, data, font_color=None, border=True, fill_color=None):
+        if not isinstance(data, (list, tuple)):
+            error("写入数据失败：数据不为列表或元组类型！【%s】" % data)
+        self.ws.append(data)
+        self.apply_style(data, font_color, border, fill_color)
+
     # 指定行插入数据（行索引从0开始）
     def insert_row_data(self, row_no, data, font_color=None, border=True, fill_color=None):
         if not isinstance(data, (list, tuple)):
-            print("写入数据失败：数据不为列表或元组类型！【%s】" % data)
+            error("写入数据失败：数据不为列表或元组类型！【%s】" % data)
         for idx, cell in enumerate(self.ws[row_no+1]):  # 此处行索引从1开始
             cell.value = data[idx]
+        self.apply_style(data, font_color, border, fill_color)
 
     # 生成写入了测试结果的excel数据文件
     def save(self, save_file_name, timestamp):
@@ -123,9 +132,10 @@ if __name__ == "__main__":
     from util.datetime_util import *
     excel = Excel(TEST_DATA_FILE_PATH)
     excel.get_sheet("测试结果统计")
+    excel.create_new_sheet("11111这是一张新表")
     # print(excel.get_all_row_data())
     # print(excel.get_row_data(1))
     # print(excel.get_col_data(1))
     # excel.write_row_data(["4", None, "嘻哈"], "green", True, "red")
-    excel.insert_row_data(1, [1,2,3])
-    excel.save(get_timestamp())
+    excel.insert_row_data(1, [1, 2, 3])
+    excel.save("测试一下", get_timestamp())

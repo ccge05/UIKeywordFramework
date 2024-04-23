@@ -5,6 +5,7 @@ from util.datetime_util import *
 from util.find_element_util import *
 from util.ini_reader import *
 from util.log_util import *
+from util.global_var import *
 
 
 DRIVER = ""
@@ -14,14 +15,17 @@ DRIVER = ""
 def init_browser(browser_name):
     global DRIVER
     if browser_name.lower() == "chrome":
-        DRIVER = webdriver.Chrome(CHROME_DRIVER)
+        DRIVER = webdriver.Chrome()
     elif browser_name.lower() == "firefox":
-        DRIVER = webdriver.Firefox(FIREFOX_DRIVER)
+        DRIVER = webdriver.Firefox()
     elif browser_name.lower() == "ie":
-        DRIVER = webdriver.Ie(IE_DRIVER)
+        DRIVER = webdriver.Ie()
+    elif browser_name.lower() == "edge":
+        DRIVER = webdriver.Edge()
     else:
         warning("浏览器【%s】不支持，已默认启动chrome" % browser_name)
-        DRIVER = webdriver.Chrome(CHROME_DRIVER)
+        DRIVER = webdriver.Chrome()
+    DRIVER.maximize_window()
 
 
 # 访问指定url
@@ -30,46 +34,38 @@ def visit(url):
     DRIVER.get(url)
 
 
-# 输入操作
-def input(locate_method, locate_exp, value):
+# 获取元素，优化输入和清空操作
+def get_element(locate_method, locate_exp):
     global DRIVER
+    method_list = ["id", "xpath", "classname", "name", "tagname", "linktext", "partial link text", "css selector"]
     # 方式1：直接传定位方式和定位表达式
-    if locate_method in ["id", "xpath", "classname", "name", "tagname", "linktext",
-                             "partial link text", "css selector"]:
-        find_element(DRIVER, locate_method, locate_exp).send_keys(value)
+    if locate_method in method_list:
+        return find_element(DRIVER, locate_method, locate_exp)
     # 方式2：通过ini文件的key找到value，再分割定位方式和定位表达式
     else:
         parser = IniParser(ELEMENT_FILE_PATH)
-        locate_method, locate_exp = tuple(parser.get_value(locate_method, locate_exp).split(">"))
-        find_element(DRIVER, locate_method, locate_exp).send_keys(value)
+        loc_method, loc_exp = tuple(parser.get_value(locate_method, locate_exp).split(">"))
+        return find_element(DRIVER, loc_method, loc_exp)
+
+
+# 输入操作
+def input(locate_method, locate_exp, value):
+    global DRIVER
+    element = get_element(locate_method, locate_exp)
+    element.send_keys(value)
 
 
 # 点击操作
 def click(locate_method, locate_exp):
     global DRIVER
-    # 方式1：直接传定位方式和定位表达式
-    if locate_method in ["id", "xpath", "classname", "name", "tagname", "linktext",
-                             "partial link text", "css selector"]:
-        find_element(DRIVER, locate_method, locate_exp).click()
-    # 方式2：通过ini文件的key找到value，再分割定位方式和定位表达式
-    else:
-        parser = IniParser(ELEMENT_FILE_PATH)
-        locate_method, locate_exp = tuple(parser.get_value(locate_method, locate_exp).split(">"))
-        find_element(DRIVER, locate_method, locate_exp).click()
+    get_element(locate_method, locate_exp).click()
 
 
 # 清空输入框操作
 def clear(locate_method, locate_exp):
     global DRIVER
-    # 方式1：直接传定位方式和定位表达式
-    if locate_method in ["id", "xpath", "classname", "name", "tagname", "linktext",
-                             "partial link text", "css selector"]:
-        find_element(DRIVER, locate_method, locate_exp).clear()
-    # 方式2：通过ini文件的key找到value，再分割定位方式和定位表达式
-    else:
-        parser = IniParser(ELEMENT_FILE_PATH)
-        locate_method, locate_exp = tuple(parser.get_value(locate_method, locate_exp).split(">"))
-        find_element(DRIVER, locate_method, locate_exp).clear()
+    element = get_element(locate_method, locate_exp)
+    element.clear()
 
 
 # 切换frame
@@ -77,7 +73,7 @@ def switch_frame(locate_method, locate_exp):
     global DRIVER
     # 方式1：直接传定位方式和定位表达式
     if locate_method in ["id", "xpath", "classname", "name", "tagname", "linktext",
-                             "partial link text", "css selector"]:
+                         "partial link text", "css selector"]:
         DRIVER.switch_to.frame(find_element(DRIVER, locate_method, locate_exp))
     # 方式2：通过ini文件的key找到value，再分割定位方式和定位表达式
     else:
